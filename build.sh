@@ -1,3 +1,6 @@
+# create the build directory if it doesn't exist
+mkdir -pv build
+
 LD=ld # linker
 CC=cc # c compiler
 ASM=nasm # assembler

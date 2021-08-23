@@ -11,3 +11,6 @@ To build, make sure you are in the top-level directory and type ```sh build.sh``
 - a c compiler
 - nasm
 - qemu
+
+### note for older commits
+if needing to build an older version based off of commits 0-6, please make sure to create the ```build``` directory before actually building.
