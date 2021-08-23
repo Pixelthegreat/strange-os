@@ -1,0 +1,1 @@
+This is a directory that includes shared header files for both the kernel and libc.
