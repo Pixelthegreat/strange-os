@@ -4,6 +4,7 @@
 
 /* types */
 #include "../types.h"
+#include "idt.h" /* registers type */
 
 /* macros */
 #define VGA_WIDTH 80 /* width of the vga text mode screen */
@@ -13,10 +14,12 @@
 /* functions */
 extern int kprint(char *); /* print text (returns result) */
 extern int kprintc(char); /* print character (returns result) */
-extern int kcls(); /* clear the terminal screen */
+extern int kcls(void); /* clear the terminal screen */
 extern int kprintcs(char, u8); /* print a character with a color */
 extern int kprints(char *, u8); /* print a string with a color */
-extern int kprintnl(); /* print new line character */
-extern int kscroll(); /* scroll up if necessary */
+extern int kprintnl(void); /* print new line character */
+extern int kscroll(void); /* scroll up if necessary */
+extern u8 kgetsc(void); /* get scancode */
+extern void kbint(registers *); /* keyboard interrupt */
 
 #endif /* _KPRINT_H */

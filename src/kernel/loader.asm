@@ -12,10 +12,20 @@ section .text
 ;dd FLAGS
 ;dd CHECKSUM
 
+; idt stuff ;
+%include "idt.asm"
+%include "gdt.asm"
+
 ; actual loader ;
 loader:
 	; external reference ;D ;
 	[extern kmain]
+	
+	;lgdt [gdt_descriptor]
+	;jmp codeseg:loader_start
 
+loader_start:
+	
+	cli ; clear interrupts ;
 	call kmain
 	jmp $

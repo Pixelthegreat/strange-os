@@ -1,8 +1,11 @@
 #include "kprint.h" /* print utils */
+#include "util.h" /* utilities */
 
 /* variables */
 char *vid_mem = (char *)0xb8000; /* start of video memory */
 int vid_idx = 0; /* index of characters in video memory */
+u8 currsc = 0; /* current scancode */
+u8 recsc = 0; /* for kgetsc */
 
 /* print character */
 extern int kprintc(char c) {
@@ -31,7 +34,7 @@ extern int kprint(char *s) {
 }
 
 /* clear the screen */
-extern int kcls() {
+extern int kcls(void) {
 
 	/* when clearing, we also need to set each color value in a unit */
 	for (int i = 0; i < (VGA_WIDTH * VGA_HEIGHT); i++) {
@@ -48,7 +51,7 @@ extern int kcls() {
 }
 
 /* print a newline character */
-extern int kprintnl() {
+extern int kprintnl(void) {
 
 	/* printing newline just works by printing a certain number of characters until we reach a new line */
 	vid_idx += VGA_WIDTH - (vid_idx % VGA_WIDTH);
@@ -58,7 +61,7 @@ extern int kprintnl() {
 }
 
 /* scrolling */
-extern int kscroll() {
+extern int kscroll(void) {
 
 	/* check if we are at last char in vid mem */
 	if (vid_idx >= (VGA_WIDTH * VGA_HEIGHT)) {
@@ -80,4 +83,23 @@ extern int kscroll() {
 
 	/* yes */
 	return 0;
+}
+
+/* get a scancode from stdin */
+extern u8 kgetsc(void) {
+
+	/* wait for key press */
+	while (!recsc) {}
+	recsc = 0; /* reset value */
+	return currsc; /* get current scancode */
+}
+
+/* keyboard interrupt */
+extern void kbint(registers *r) {
+	
+	/* set value 'recsc' */
+	recsc = 1;
+
+	/* get scancode from keyboard buffer */
+	currsc = (portbin(0x60));
 }
