@@ -12,6 +12,14 @@
 /* types */
 #include "../types.h"
 
+/* kernel stuff */
+#include "disk/ata.h"
+#include "kprint.h"
+#include "util.h"
+
+/* disk sector buffer */
+char buffer[512];
+
 /* entry point function -- called by kernel loader */
 int kmain() {
 	
@@ -23,20 +31,15 @@ int kmain() {
 	
 	/* clear the screen buffer */
 	kcls();
-	
-	/* hello world */
-	char *s = "hello, world!\n";
-	write(1, s, strlen(s));
 
-	/* get scancodes */
-	while (1) {
-	
-		/* wait for key press and receive scancode */
-		u8 sc = kgetsc();
-		
-		/* print scancode as character */
-		kprintc(sc);
-	}
+	/* intialise ata */
+	ata_init();
+
+	/* read data */
+	ata_chs_read(0, 0, 1, 0, buffer);
+
+	/* print data in buffer */
+	write(1, (void *)&buffer[510], 2);
 	
 	return 0; /* exit */
 }

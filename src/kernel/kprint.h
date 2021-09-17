@@ -6,6 +6,11 @@
 #include "../types.h"
 #include "idt.h" /* registers type */
 
+/* scancodes */
+#define SCANCODE_BACKSPACE (u8)(0x0E) /* backspace key */
+#define SCANCODE_SHIFT_DOWN (u8)(0x2A) /* shift key down */
+#define SCANCODE_SHIFT_UP (u8)(0xAA) /* shift key up */
+
 /* macros */
 #define VGA_WIDTH 80 /* width of the vga text mode screen */
 #define VGA_HEIGHT 25 /* height of the vga text mode screen */
@@ -21,5 +26,8 @@ extern int kprintnl(void); /* print new line character */
 extern int kscroll(void); /* scroll up if necessary */
 extern u8 kgetsc(void); /* get scancode */
 extern void kbint(registers *); /* keyboard interrupt */
+extern char kgetc(void); /* get a character from stdin */
+extern void kprinthex(unsigned int); /* print hexadecimal number */
+extern char *kgets(void); /* get a string of characters */
 
 #endif /* _KPRINT_H */

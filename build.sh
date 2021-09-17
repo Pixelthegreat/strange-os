@@ -17,6 +17,9 @@ $CC $CCFLAGS -o ../../build/kprint.o -c kprint.c
 $CC $CCFLAGS -o ../../build/idt.o -c idt.c
 $CC $CCFLAGS -o ../../build/util.o -c util.c
 $CC $CCFLAGS -o ../../build/gdt.o -c gdt.c
+$CC $CCFLAGS -o ../../build/syscall.o -c syscall.c
+$CC $CCFLAGS -o ../../build/ata.o -c disk/ata.c
+$CC $CCFLAGS -o ../../build/scheduler.o -c scheduler.c
 
 # clib base
 $CC $CCFLAGS -o ../../build/unistd.o -c io/unistd.c
@@ -33,13 +36,16 @@ cd ../..
 
 # link kernel sections (important: multiboot.o and loader.o must come BEFORE kernel.o!!!)
 cd build
-$LD $LDFLAGS -o kernel.bin multiboot.o loader.o kernel.o kprint.o idt.o gdt.o util.o unistd.o string.o
+$LD $LDFLAGS -o strange multiboot.o loader.o kernel.o kprint.o idt.o gdt.o util.o unistd.o string.o syscall.o ata.o scheduler.o
 
 # make directory if it hasn't been
 mkdir -pv isofs/boot/grub
 
+# copy important system folders
+cp -pr ../grub/system/* isofs/
+
 # copy kernel and config
-cp kernel.bin isofs/boot/
+cp strange isofs/boot/
 cp ../grub/grub.cfg isofs/boot/grub
 
 # GRand Unified Bootloader 7 3

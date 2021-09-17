@@ -38,6 +38,7 @@ typedef void (*isr)(registers *); /* isr type */
 extern void set_idt_gate(int, u32); /* set an idt gate to be a handler */
 extern void isr_handler(registers *); /* handle an isr */
 extern void isr_install(void); /* setup isrs */
+extern void int_handler(registers *); /* handle any extra interrupts */
 extern void irq_handler(registers *); /* handle an irq */
 extern void isr_enable(void); /* enable isrs */
 extern void idt_load(void); /* load idt */
@@ -91,5 +92,6 @@ extern void irq12();
 extern void irq13();
 extern void irq14();
 extern void irq15();
+extern void irqsyscall();
 
 #endif /* _IDT_H */

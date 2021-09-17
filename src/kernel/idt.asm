@@ -1,6 +1,7 @@
 ; external references ;
 extern irq_handler
 extern isr_handler
+extern int_handler
 
 ; make all isrs visible ;
 global isr0
@@ -53,6 +54,8 @@ global irq12
 global irq13
 global irq14
 global irq15
+
+global irqsyscall
 
 ; actual isrs ;
 isr0:
@@ -266,6 +269,12 @@ irq15:
 	push byte 0
 	push byte 47
 	jmp irq_common_stub
+
+; syscall handler ;
+irqsyscall:
+	push byte 0
+	push byte 0x40
+	jmp int_common_stub
 	
 isr_common_stub:
 	pusha
@@ -294,6 +303,34 @@ isr_common_stub:
 	
 	add esp, 8
 	
+	iretd
+	
+int_common_stub:
+	pusha
+	
+	mov ax, ds
+	push eax
+	
+	mov ax, 0x10
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	
+	push esp
+	
+	call int_handler
+	pop eax
+	
+	pop eax
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	
+	popa
+	
+	add esp, 8
 	iretd
 	
 irq_common_stub:

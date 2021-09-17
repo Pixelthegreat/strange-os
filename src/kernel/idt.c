@@ -4,11 +4,16 @@
 #include "../include/unistd.h" /* unistd io */
 #include "../include/string.h" /* string */
 #include "kprint.h" /* terminal */
+#include "syscall.h" /* system calls */
+#include "disk/ata.h" /* ata stuff */
 
 /* values */
 idt_reg_t idt_reg;
 idt_gate idt[256];
 isr int_handlers[256];
+
+/* forward decls */
+static void no_irq(registers *);
 
 /* set a gate */
 extern void set_idt_gate(int n, u32 handler) {
@@ -24,8 +29,9 @@ extern void set_idt_gate(int n, u32 handler) {
 extern void isr_handler(registers *r) {
 
 	/* print an error message */
-	char *err_str = "error: cpu error\n";
-	write(1, err_str, strlen(err_str));
+	kprint("error: cpu error ");
+	kprinthex(r->int_no);
+	kprintnl();
 }
 
 /* handle an irq */
@@ -38,10 +44,26 @@ extern void irq_handler(registers *r) {
 		handler(r);
 	}
 
-	/* eoi */
-	portbout(0x20, 0x20);
-	if (r->int_no < 40)
-		portbout(0xA0, 0x20);
+	/* eoi (for PIC irqs only) */
+	if (r->int_no < 48) {
+	
+		portbout(0x20, 0x20);
+		if (r->int_no >= 40)
+			portbout(0xA0, 0x20);
+	}
+}
+
+/* handle any regular interrupt */
+extern void int_handler(registers *r) {
+
+	/* get the handler */
+	if (int_handlers[r->int_no] != NULL) {
+	
+		isr handler = int_handlers[r->int_no];
+		handler(r);
+	}
+	
+	/* done */
 }
 
 /* register a handler */
@@ -60,6 +82,17 @@ extern void idt_load(void) {
 	
 	/* load the keyboard interrupt */
 	idt_set_handler(33, kbint);
+
+	/* system calls */
+	idt_set_handler(0x40, ksysint);
+	
+	/* load ata interrupt (both 46 and 47 are used for this) */
+	idt_set_handler(46, ata_irq);
+	idt_set_handler(47, no_irq);
+}
+
+/* no irq */
+static void no_irq(registers *r) {
 }
 
 /* setup isrs */
@@ -97,26 +130,36 @@ extern void isr_install(void) {
 	set_idt_gate(29, (u32)isr29);
 	set_idt_gate(30, (u32)isr30);
 	set_idt_gate(31, (u32)isr31);
-
-	/* set stuff */
+	
+	/* reprogram the pic (if you want to learn more, you should go check out the osdev wiki page "8259 PIC") */
 	portbout(0x20, 0x11);
+	io_wait();
 	portbout(0xA0, 0x11);
-
+	io_wait();
+	
 	// ICW2
 	portbout(0x21, 0x20);
+	io_wait();
 	portbout(0xA1, 0x28);
-
+	io_wait();
+	
 	// ICW3
 	portbout(0x21, 0x04);
+	io_wait();
 	portbout(0xA1, 0x02);
-
+	io_wait();
+	
 	// ICW4
 	portbout(0x21, 0x01);
+	io_wait();
 	portbout(0xA1, 0x01);
-
+	io_wait();
+	
 	// OCW1
 	portbout(0x21, 0x0);
+	io_wait();
 	portbout(0xA1, 0x0);
+	io_wait();
 
 	/* set irqs */
 	set_idt_gate(32, (u32)irq0);
@@ -135,6 +178,9 @@ extern void isr_install(void) {
 	set_idt_gate(45, (u32)irq13);
 	set_idt_gate(46, (u32)irq14);
 	set_idt_gate(47, (u32)irq15);
+	
+	/* set syscall gate */
+	set_idt_gate(0x40, (u32)irqsyscall);
 
 	/* load the idt */
 	idt_load();

@@ -7,6 +7,12 @@ int vid_idx = 0; /* index of characters in video memory */
 u8 currsc = 0; /* current scancode */
 u8 recsc = 0; /* for kgetsc */
 
+/* scancode conversion table */
+char scancodes[] = "??1234567890-=??qwertyuiop[]\n?asdfghjkl;\'`?\\zxcvbnm,./??? \?\?!@#$%^&*()_+??QWERTYUIOP{}??ASDFGHJKL:\"~?\\ZXCVBNM<>???? ";
+
+/* hexadecimal characters */
+char hex_chars[] = "0123456789ABCDEF";
+
 /* print character */
 extern int kprintc(char c) {
 
@@ -94,12 +100,87 @@ extern u8 kgetsc(void) {
 	return currsc; /* get current scancode */
 }
 
+/* get a character from terminal */
+extern char kgetc(void) {
+
+	/* return char from scancode conversion set */
+	u8 sc;
+	if ((sc = kgetsc()) > 58)
+		return 0; /* no scancode */
+	
+	return scancodes[sc]; /* get scancodes */
+}
+
 /* keyboard interrupt */
 extern void kbint(registers *r) {
-	
+		
 	/* set value 'recsc' */
 	recsc = 1;
 
 	/* get scancode from keyboard buffer */
 	currsc = (portbin(0x60));
+}
+
+/* print hex number */
+extern void kprinthex(unsigned int h) {
+
+	u8 i = 8;
+	while (i > 0) {
+	
+		kprintc(hex_chars[(h >> ((--i) * 4)) & 0xf]);
+	}
+}
+
+/* get a string of characters */
+char _termbuf[2048]; /* buffer for kgets */
+
+extern char *kgets() {
+
+	/* loop through chars */
+	u8 sc; /* scancode */
+	char c; /* character */
+	int nchars = 0; /* number of chars written to buffer */
+	int shiftval = 0; /* is shift key being pressed */
+
+	while (((sc = kgetsc()) < 58? (c = scancodes[sc]) != '\n' : (c = 0) == 0)) {
+		
+		/* shift key */
+		if (sc == SCANCODE_SHIFT_DOWN) shiftval = 1;
+		else if (sc == SCANCODE_SHIFT_UP) shiftval = 0;
+
+		/* remove a character */
+		if (sc == SCANCODE_BACKSPACE) {
+		
+			if (nchars > 0) {
+				
+				_termbuf[--nchars] = 0;
+				vid_mem[(--vid_idx) * 2] = 0; /* remove character from video memory */
+			}
+		}
+	
+		/* add a character */
+		else if ((c != 0) && nchars < 2047 && (sc != SCANCODE_SHIFT_DOWN) && (sc != SCANCODE_SHIFT_UP)) {
+			
+			if (shiftval != 1) {
+				
+				/* no shift */
+				_termbuf[nchars++] = c;
+				kprintc(c); /* character */
+			} else {
+			
+				/* shift */
+				_termbuf[nchars++] = scancodes[sc + 58];
+				kprintc(scancodes[sc + 58]);
+			}
+		}
+	}
+	
+	/* add null termination character */
+	_termbuf[nchars] = 0;
+
+	/* print a new line */
+	kprintnl();
+	
+	/* return buffer */
+	return (char *)_termbuf;
 }
