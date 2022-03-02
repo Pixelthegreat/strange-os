@@ -21,6 +21,9 @@
 extern void ata_init(void); /* initialise */
 extern void ata_irq(registers *); /* ata irq */
 extern void ata_start(int, u8, u8, u8, u16, void *); /* send ata command */
+extern void ata_start_lba(int, u32, u8, void *); /* send ata lba command */
+extern int  ata_get_dev(void); /* 0x0: no devices found on ata port, 0x1: device found on primary one, 0x2: device found on secondary one, 0x3: both primary one and secondary one */
+extern void ata_dev(int); /* set default device for read and write functions */
 
 /* read from IDE device in ATA PIO mode */
 static inline void ata_chs_read(u16 z, u8 a, u8 b, u8 c, void * d) {
@@ -33,6 +36,12 @@ static inline void ata_chs_read(u16 z, u8 a, u8 b, u8 c, void * d) {
 static inline void ata_chs_write(u16 z, u8 a, u8 b, u8 c, void * d) {
 
 	ata_start(ATA_CMD_WRITE, a, b, c, z, d);
+}
+
+/* read from IDE device with LBA */
+static inline void ata_lba_read(u32 s, u8 n, void *b) {
+
+	ata_start_lba(ATA_CMD_READ, s, n, b);
 }
 
 #endif /* _ATA_H */

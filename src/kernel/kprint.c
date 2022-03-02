@@ -7,6 +7,10 @@ int vid_idx = 0; /* index of characters in video memory */
 u8 currsc = 0; /* current scancode */
 u8 recsc = 0; /* for kgetsc */
 
+/* forward decls */
+static void setcur(int);
+static int getcur(void);
+
 /* scancode conversion table */
 char scancodes[] = "??1234567890-=??qwertyuiop[]\n?asdfghjkl;\'`?\\zxcvbnm,./??? \?\?!@#$%^&*()_+??QWERTYUIOP{}??ASDFGHJKL:\"~?\\ZXCVBNM<>???? ";
 
@@ -51,6 +55,9 @@ extern int kcls(void) {
 	
 	/* reset values */
 	vid_idx = 0;
+	setcur(0);
+
+	/* asm */
 
 	/* yes */
 	return 0;
@@ -61,6 +68,8 @@ extern int kprintnl(void) {
 
 	/* printing newline just works by printing a certain number of characters until we reach a new line */
 	vid_idx += VGA_WIDTH - (vid_idx % VGA_WIDTH);
+
+	setcur(vid_idx);
 
 	/* yes */
 	return 0;
@@ -86,6 +95,9 @@ extern int kscroll(void) {
 		/* reset video index */
 		vid_idx = (VGA_WIDTH * VGA_HEIGHT) - VGA_WIDTH;
 	}
+	
+	/* set cursor position */
+	setcur(vid_idx);
 
 	/* yes */
 	return 0;
@@ -183,4 +195,23 @@ extern char *kgets() {
 	
 	/* return buffer */
 	return (char *)_termbuf;
+}
+
+/* set cursor pos */
+static void setcur(int off) {
+
+	portbout(VGA_CTRL_REGISTER, VGA_OFFSET_HIGH);
+	portbout(VGA_DATA_REGISTER, (u8)(off >> 8));
+	portbout(VGA_CTRL_REGISTER, VGA_OFFSET_LOW);
+	portbout(VGA_DATA_REGISTER, (u8)(off & 0xFF));
+}
+
+/* get cursor position */
+static int getcur(void) {
+
+	portbout(VGA_CTRL_REGISTER, VGA_OFFSET_HIGH);
+	int off = portbin(VGA_DATA_REGISTER) << 8;
+	portbout(VGA_CTRL_REGISTER, VGA_OFFSET_LOW);
+	off |= portbin(VGA_DATA_REGISTER);
+	return off;
 }

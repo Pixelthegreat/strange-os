@@ -6,6 +6,7 @@
 #include "kprint.h" /* terminal */
 #include "syscall.h" /* system calls */
 #include "disk/ata.h" /* ata stuff */
+#include "panic.h" /* kpanic */
 
 /* values */
 idt_reg_t idt_reg;
@@ -32,6 +33,14 @@ extern void isr_handler(registers *r) {
 	kprint("error: cpu error ");
 	kprinthex(r->int_no);
 	kprintnl();
+	
+	/* page fault */
+	if (r->int_no == 14)
+		kpanic(E_PAGEFLT, "page fault\n");
+
+	/* otherwise */
+	else
+		kpanic(E_CPUERR, "cpu error\n");
 }
 
 /* handle an irq */

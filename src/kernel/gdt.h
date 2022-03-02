@@ -18,11 +18,12 @@ typedef struct {
 	u8 access;
 	u8 lim16_19:4;
 	u8 other:4;
+	//u8 lo;
 	u8 base24_31;
 } __attribute__((packed)) gdt_desc;
 
 /* macros */
-#define GDTBASE 0x00000800
+#define GDTBASE 0x0000A000
 #define GDTSIZE 0xFF
 
 /* functions */

@@ -14,7 +14,9 @@ typedef int		size_t;
 typedef unsigned int	ssize_t;
 
 /* "NULL" is just a fancy way of saying "(void *)0" */
-
 #define NULL ((void *)0)
+
+/* align a number to a certain amount */
+#define ALIGN(v, a) (((v) + (a-1)) & ~(v-1))
 
 #endif /* _TYPES_H */

@@ -117,7 +117,7 @@ isr13:
 	push byte 13
 	
 isr14:
-	push byte 0
+	; error info pushed by CPU ;
 	push byte 14
 	
 isr15:

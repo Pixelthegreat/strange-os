@@ -10,6 +10,7 @@ extern void init_gdt_desc(u32 base, u32 limit, u8 access, u8 other, gdt_desc *de
 	desc->access = access;
 	desc->lim16_19 = (limit & 0xf0000) >> 16;
 	desc->other = (other & 0xf);
+	//desc->lo = ((limit & 0xf0000) >> 12) | (other & 0xf);
 	desc->base24_31 = (base & 0xff000000) >> 24;
 }
 

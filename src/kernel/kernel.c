@@ -16,30 +16,62 @@
 #include "disk/ata.h"
 #include "kprint.h"
 #include "util.h"
+#include "page.h"
+#include "panic.h"
+#include "fs/ext2.h"
+#include "dev.h"
+#include "heap.h"
 
 /* disk sector buffer */
 char buffer[512];
 
+char *s; /* string for storing boot messages */
+
+struct dev_part rp; /* root partition stuff */
+
 /* entry point function -- called by kernel loader */
-int kmain() {
+int kmain(void) {
 	
 	/* initialise gdt */
 	init_gdt();
 	
 	/* load idt */
 	isr_install();
-	
+
 	/* clear the screen buffer */
 	kcls();
+	
+	/* initilize paging */
+	s = "[kernel] initializing paging...\n";
+	write(1, s, strlen(s));
+	paging_enable();
 
-	/* intialise ata */
+	/* initialize heap */
+	s = "[kernel] initializing heap...\n";
+	write(1, s, strlen(s));
+	heap_init();
+
+	/* intialize ata */
+	s = "[kernel] initializing ata port...\n";
+	write(1, s, strlen(s));
 	ata_init();
 
-	/* read data */
-	ata_chs_read(0, 0, 1, 0, buffer);
+	/* mount the vfs */
+	s = "[kernel] mounting vfs...\n";
+	write(1, s, strlen(s));
+	fs_init();
 
-	/* print data in buffer */
-	write(1, (void *)&buffer[510], 2);
-	
+	ext2_check_sig(0);
+
+	/* search for a root device and partition */
+	//s = "[kernel] searching for root device...\n";
+	//write(1, s, strlen(s));
+	//rp = dev_init_root();
+
+	/* print info for device */
+	//kprint("[kernel] root device is ");
+	//kprinthex(rp.dev);
+	//kprintnl();
+
 	return 0; /* exit */
 }

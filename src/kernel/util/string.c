@@ -25,3 +25,18 @@ extern void *memcpy(void *b, void *a, size_t n) {
 	for (size_t i = 0; i < n; i++)
 		((char *)b)[i] = ((char *)a)[i];
 }
+
+/* strcpy */
+extern char *strcpy(char *dst, char *src) {
+
+	memcpy(dst, src, strlen(src));
+	dst[strlen(src)] = 0;
+}
+
+/* set a char in a set memory location */
+extern int memset(void *m, char c, size_t n) {
+
+	/* loop */
+	for (size_t i = 0; i < n; i++)
+		((char *)m)[i] = c;
+}

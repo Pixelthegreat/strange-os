@@ -15,6 +15,10 @@
 #define VGA_WIDTH 80 /* width of the vga text mode screen */
 #define VGA_HEIGHT 25 /* height of the vga text mode screen */
 #define VGA_DEFAULT_COLOR 0x08 /* default vga color when clearing the screen */
+#define VGA_CTRL_REGISTER 0x3d4 /* control/command port for the vga system */
+#define VGA_DATA_REGISTER 0x3d5 /* data for VGA_CTRL_REGISTER */
+#define VGA_OFFSET_LOW 0x0f
+#define VGA_OFFSET_HIGH 0x0e
 
 /* functions */
 extern int kprint(char *); /* print text (returns result) */

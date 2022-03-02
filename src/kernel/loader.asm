@@ -1,6 +1,6 @@
 ; load the kernel ;
 global loader
-;extern kernel_main
+extern kernel_main
 ;MAGIC equ 0x1badb002
 ;FLAGS equ 0x3
 ;CHECKSUM equ -(MAGIC+FLAGS)
@@ -11,6 +11,7 @@ section .text
 ;dd MAGIC
 ;dd FLAGS
 ;dd CHECKSUM
+	jmp loader
 
 %include "idt.asm" ; interrupt descriptor table ;
 %include "gdt.asm" ; global descriptor table ;
@@ -22,11 +23,17 @@ loader:
 	[extern kmain]
 	[extern kprint]
 
-	;lgdt [gdt_descriptor]
-	;jmp codeseg:loader_start
+	lgdt [gdt_descriptor]
+	;mov ax, dataseg
+	;mov ds, ax
+	;mov es, ax
+	;mov fs, ax
+	;mov gs, ax
+	jmp codeseg:loader_start
+	;jmp loader_start
 
 loader_start:
-	
+
 	cli ; clear interrupts ;
 	call kmain
 
