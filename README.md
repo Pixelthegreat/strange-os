@@ -8,7 +8,7 @@ I was working on an operating system before this. However, it was using the FAT1
 I added some EXT2 support, but it isn't fully finished yet.
 
 ## build and run
-To build, make sure you are in the top-level directory and type ```./build.sh```. This should build everything so that it can be ready to run. Next, type ```./run.sh```. This will open an instance of qemu.
+To build, make sure you are in the top-level directory and type ```make```. This should build everything so that it can be ready to run. Next, type ```./run.sh```. This will open an instance of qemu, with the built bootdisk for strange-os.
 
 ### requirements (for building and running)
 - a c compiler

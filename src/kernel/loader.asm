@@ -13,9 +13,9 @@ section .text
 ;dd CHECKSUM
 	jmp loader
 
-%include "idt.asm" ; interrupt descriptor table ;
-%include "gdt.asm" ; global descriptor table ;
-%include "disk/ata.asm" ; ATA functions in low-level assembly ;
+%include "src/kernel/idt.asm" ; interrupt descriptor table ;
+%include "src/kernel/gdt.asm" ; global descriptor table ;
+%include "src/kernel/disk/ata.asm" ; ATA functions in low-level assembly ;
 
 ; actual loader ;
 loader:
