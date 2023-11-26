@@ -10,7 +10,7 @@ CFLAGS=-c -m32 -ffreestanding -fno-pie -nostdlib -nostartfiles -nodefaultlibs
 ASMFLAGS=-f$(ASMARCH)
 LDFLAGS=-T src/kernel/linker.ld -m$(LDARCH)
 
-OBJFILES=build/multiboot.o build/loader.o build/kernel.o build/kprint.o build/idt.o build/util.o build/gdt.o build/syscall.o build/ata.o build/ext2.o build/page.o build/panic.o build/mbr.o build/dev.o build/heap.o build/fs.o build/unistd.o build/string.o
+OBJFILES=build/multiboot.o build/loader.o build/kernel.o build/kprint.o build/idt.o build/util.o build/gdt.o build/syscall.o build/ata.o build/ext2.o build/page.o build/panic.o build/mbr.o build/dev.o build/heap.o build/fs.o build/unistd.o build/string.o build/vga16.o
 
 # primary targets
 all: kernel bootdisk
@@ -63,6 +63,12 @@ build/heap.o: src/kernel/heap.c src/kernel/heap.h
 
 build/fs.o: src/kernel/fs/fs.c src/kernel/fs/fs.h
 	$(CC) $(CFLAGS) -o build/fs.o src/kernel/fs/fs.c
+
+build/vga16.o: src/kernel/video/vga16.c src/kernel/video/vga16.h
+	$(CC) $(CFLAGS) -o build/vga16.o src/kernel/video/vga16.c
+
+build/string.o: src/kernel/util/string.c src/include/string.h
+	$(CC) $(CFLAGS) -o build/string.o src/kernel/util/string.c
 
 build/loader.o: src/kernel/loader.asm
 	$(ASM) $(ASMFLAGS) -o build/loader.o src/kernel/loader.asm

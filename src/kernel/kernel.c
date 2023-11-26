@@ -21,11 +21,9 @@
 #include "fs/ext2.h"
 #include "dev.h"
 #include "heap.h"
+#include "video/vga16.h"
 
-/* disk sector buffer */
-char buffer[512];
-
-char *s; /* string for storing boot messages */
+char buffer[512]; /* disk sector buffer */
 
 struct dev_part rp; /* root partition stuff */
 
@@ -42,26 +40,33 @@ int kmain(void) {
 	kcls();
 	
 	/* initilize paging */
-	s = "[kernel] initializing paging...\n";
-	write(1, s, strlen(s));
+	kprint("[kernel] initializing paging...\n");
 	paging_enable();
 
 	/* initialize heap */
-	s = "[kernel] initializing heap...\n";
-	write(1, s, strlen(s));
+	kprint("[kernel] initializing heap...\n");
 	heap_init();
 
 	/* intialize ata */
-	s = "[kernel] initializing ata port...\n";
-	write(1, s, strlen(s));
+	kprint("[kernel] initializing ata port...\n");
 	ata_init();
 
 	/* mount the vfs */
-	s = "[kernel] mounting vfs...\n";
-	write(1, s, strlen(s));
+	kprint("[kernel] mounting vfs...\n");
 	fs_init();
 
-	ext2_check_sig(0);
+	/* mount ext2fs */
+	int res = ext2_check_sig(0);
+	struct fs_node ext2_root = {.name = "/", .inode = 2, .dev = 0, .part = 1};
+	struct fs_node *n = ext2_finddir(&ext2_root, "lost+found");
+	kprinthex((u32)n);
+	if (n != NULL) {
+		kprintc(' ');
+		kprint(n->name);
+		kprintc(' ');
+		kprinthex(n->inode);
+	}
+	kprintnl();
 
 	/* search for a root device and partition */
 	//s = "[kernel] searching for root device...\n";
@@ -72,6 +77,13 @@ int kmain(void) {
 	//kprint("[kernel] root device is ");
 	//kprinthex(rp.dev);
 	//kprintnl();
+
+	/* test vga16 */
+	//vga_init(320, 200, 256);
+	
+	//for (int y = 0; y < 200; y++)
+	//	for (int x = 0; x < 320; x++)
+	//		vga_addr[(y * 320) + x] = 0x3;
 
 	return 0; /* exit */
 }

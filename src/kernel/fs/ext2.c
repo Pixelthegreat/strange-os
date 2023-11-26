@@ -25,6 +25,7 @@ struct ext2_sb_info {
 	u32 bs; /* block size */
 	struct ext2_bgd_info *bgds; /* block group descriptor info */
 	struct ext2_inode *rootdir; /* root directory */
+	char *rootdir_buf; /* root directory buffer (for dirents) */
 };
 
 /* list of stuff */
@@ -42,6 +43,9 @@ static char *randbuf = NULL; /* buffer for storing stuff */
 /* functions */
 static int ext2_load_bgdt(struct ext2_sb_info *);
 static int ext2_read_inode(struct ext2_sb_info *, int, struct ext2_inode *);
+static char *ext2_read_data(struct ext2_sb_info *, struct ext2_inode *);
+static struct ext2_dirent *ext2_inode_readdir(struct ext2_sb_info *, struct ext2_inode *, u32);
+static struct ext2_sb_info *ext2_sb_get_part(kdev_t, int);
 
 /* check ext2 signatures of devices */
 extern int ext2_check_sig(int dev) {
@@ -83,6 +87,8 @@ extern int ext2_check_sig(int dev) {
 				e->pt.p = i;
 				e->pt.dev = dev;
 				e->bs = 1024 << sb->bs; /* get block size */
+				e->rootdir = NULL; /* root directory inode */
+				e->rootdir_buf = NULL; /* root directory inode data buffer */
 				
 				/* malloc some sb stuff */
 				struct ext2_sb *sb = (struct ext2_sb *)kmalloc(1024);
@@ -93,6 +99,32 @@ extern int ext2_check_sig(int dev) {
 
 				/* set value */
 				ext2fs |= (1 << (i-1));
+
+				/* read root directory inode */
+				//char *rootdir_buf = (char *)kmalloc(128);
+				//struct ext2_inode *rootdir = (struct ext2_inode *)rootdir_buf;
+
+				//ext2_read_inode(e, 2, rootdir);
+
+				//char *dbuf = ext2_read_data(e, rootdir);
+
+				/* print dirents */
+				//int i = 0;
+				//while (dbuf[i]) {
+
+				//	struct ext2_dirent *de = (void *)(dbuf + i);
+
+					/* print name */
+				//	for (int j = 0; j < de->nl; j++) kprintc(de->name[j]);
+				//	kprintnl();
+
+				//	i += de->esz;
+				//}
+				//struct fs_node *node = (struct fs_node *)kmalloc(sizeof(struct fs_node));
+				//memset(node, 0, sizeof(struct fs_node));
+				
+				/* set stuff */
+				//
 			}
 		}
 	}
@@ -150,14 +182,6 @@ static int ext2_load_bgdt(struct ext2_sb_info *e) {
 		ext2_read_block(e, e->bgdt[i].bub, e->bgds->bub);
 		ext2_read_block(e, e->bgdt[i].iub, e->bgds->iub);
 	}
-	
-	/* read root directory inode */
-	char *rootdir_buf = (char *)kmalloc(128);
-	struct ext2_inode *rootdir = (struct ext2_inode *)rootdir_buf;
-	
-	ext2_read_inode(e, 2, rootdir);
-	
-	kprinthex(rootdir->tp);
 }
 
 /* read data of inode */
@@ -177,4 +201,177 @@ static int ext2_read_inode(struct ext2_sb_info *e, int inode, struct ext2_inode 
 	memcpy((void *)buf, ((void *)randbuf) + i2 * 128, 128);
 	
 	return 0;
+}
+
+/* read data of inode (file data, not like previous) */
+static char *ext2_read_data(struct ext2_sb_info *e, struct ext2_inode *p) {
+	
+	/* todo: add support for the singly indirect, doubly indirect, and triply indirect block pointers */
+	if (p->sz_low >= 1024 * 12)
+		return NULL;
+	
+	/* create buffer */
+	char *buf = (char *)kmalloc(ALIGN(p->sz_low, 1024));
+	
+	if (buf == NULL) return NULL;
+	
+	/* load data */
+	int i = 0;
+	while (i * 1024 < p->sz_low) {
+
+		ext2_read_block(e, *(&p->dbp0 + i), buf + i * 1024);
+		i++;
+	}
+	
+	/* return buffer */
+	return buf;
+}
+
+/* find file in directory */
+extern struct fs_node *ext2_finddir(struct fs_node *n, char *name) {
+
+	/* get partition */
+	struct ext2_sb_info *e;
+	if ((e = ext2_sb_get_part(n->dev, n->part)) == NULL)
+		return NULL;
+	
+	/* read inode */
+	char _in[128];
+	struct ext2_inode *p = (struct ext2_inode *)_in;
+
+	ext2_read_inode(e, n->inode, p);
+
+	/* check type */
+	if (!(p->tp & EXT2_DIR))
+		return NULL;
+
+	/* get inode buffer */
+	char *buf = ext2_read_data(e, p);
+
+	/* loop */
+	struct fs_node *nd = NULL;
+	int i = 0;
+	u32 x = 0;
+	char namebuf[128];
+
+	while (nd == NULL) {
+
+		struct ext2_dirent *de = (struct ext2_dirent *)&buf[x];
+		if (!de->inode && x > ALIGN(p->sz_low, 1024) - 1024) break;
+		else if (!de->inode) x = ALIGN(x, 1024);
+		else x += de->esz;
+		i++;
+
+		/* copy name */
+		memcpy(namebuf, de->name, de->nl);
+		namebuf[de->nl] = 0;
+		
+		/* compare */
+		if (kstreq(namebuf, name)) {
+
+			nd = (struct fs_node *)kmalloc(sizeof(struct fs_node));
+			memcpy(nd->name, de->name, de->nl);
+			nd->name[de->nl] = 0;
+			nd->inode = de->inode;
+		}
+	}
+
+	/* free buffer */
+	kfree(buf);
+	return nd;
+}
+
+/* read directory entry for inode */
+extern struct dirent *ext2_readdir(struct fs_node *n, u32 idx) {
+
+	/* get partition */
+	struct ext2_sb_info *e;
+	if ((e = ext2_sb_get_part(n->dev, n->part)) == NULL)
+		return NULL;
+
+	/* read inode */
+	char _in[128];
+	struct ext2_inode *p = (struct ext2_inode *)_in;
+	
+	ext2_read_inode(e, n->inode, p);
+	
+	/* check type */
+	if (!(p->tp & EXT2_DIR))
+		return NULL;
+	
+	/* get inode buffer */
+	char *buf = ext2_read_data(e, p);
+	
+	/* loop */
+	struct dirent *nd = NULL;
+	int i = 0, x = 0;
+	
+	while (!n && i < idx + 1) {
+
+		/* get dirent */
+		struct ext2_dirent *de = (struct ext2_dirent *)&buf[x];
+		
+		/* at the end */
+		if (!de->inode && x > ALIGN(p->sz_low, 1024) - 1024) break;
+		
+		else if (!de->inode) x = ALIGN(x, 1024);
+		else x += de->esz;
+		
+		i++;
+		
+		/* create directory entry */
+		if (i == idx) {
+
+			nd = (struct dirent *)kmalloc(sizeof(struct dirent));
+			memset(nd, 0, sizeof(struct dirent));
+			memcpy(nd->name, de->name, de->nl);
+			nd->inode = de->inode;
+		}
+	}
+	
+	/* free buffer */
+	kfree(buf);
+	
+	/* return directory entry */
+	return nd;
+}
+
+/* read directory entry from already read inode struct */
+static struct ext2_dirent *ext2_inode_readdir(struct ext2_sb_info *e, struct ext2_inode *p, u32 id) {
+
+	/* check inode type */
+	if (!(p->tp & EXT2_DIR))
+		return NULL;
+	
+	/* read block data */
+	char *buf = NULL;
+	
+	if (id == 2 && e->rootdir_buf) buf = e->rootdir_buf;
+	else buf = ext2_read_data(e, p);
+	
+	/* set buffer */
+	if (id == 2 && !(e->rootdir_buf)) {
+
+		e->rootdir = p;
+		e->rootdir_buf = buf;
+	}
+	//
+}
+
+/* get partition info */
+static struct ext2_sb_info *ext2_sb_get_part(kdev_t dev, int p) {
+	
+	struct ext2_sb_info *e = NULL;
+	
+	/* loop through list */
+	for (int i = 0; i < ext2_sb_info_n; i++) {
+
+		/* check device and partition numbers */
+		if (ext2_sb_info[i].pt.dev == dev && ext2_sb_info[i].pt.p == p) {
+			e = &ext2_sb_info[i];
+			break;
+		}
+	}
+	
+	return e;
 }

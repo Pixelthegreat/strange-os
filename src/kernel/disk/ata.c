@@ -194,10 +194,6 @@ extern void ata_irq(registers *r) {
 	/* notify ata_start of ata_irq being called */
 	_ata_irq_called = 1;
 
-	/* print message */
-	char *s = "[debug: ata] irq 46 called\n";
-	write(1, s, strlen(s));
-
 	/* read data if needed */
 	if (_ncmd == ATA_CMD_READ) {
 	
