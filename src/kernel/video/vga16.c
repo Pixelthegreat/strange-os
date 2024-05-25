@@ -1,17 +1,25 @@
 /* vga16 vga driver */
-#include "vga16.h"
+#include "../../types.h"
+#include "../../include/string.h"
 #include "../util.h"
+#include "../heap.h"
+#include "vpal.h"
+#include "vga16.h"
+#include "font.h"
+
+static u8 *const vga_intern_addr = (u8 *)0xA0000;
 
 /* values */
 int vga_width = 0;
 int vga_height = 0;
 int vga_bpp = 0;
 u8 *vga_addr = NULL;
+u8 vga_font_color = 0x18;
 
 static int vga_enabled = 0;
 
 /* 320x200 256 color mode (vga16 mode A) */
-static unsigned char mode_a[] = {
+static u8 mode_a[] = {
 	/* misc */
 	0x63,
 	/* seq */
@@ -92,7 +100,7 @@ extern void vga_cls(void) {
 	/* set colors */
 	for (y = 0; y < vga_height; y++)
 		for (x = 0; x < vga_width; x++)
-			vga_addr[vga_width * y + x] = 0x0f;
+			vga_addr[vga_width * y + x] = 0x00;
 }
 
 /* initialize vga */
@@ -101,11 +109,60 @@ extern void vga_init(int w, int h, int bpp) {
 	vga_width = w;
 	vga_height = h;
 	vga_bpp = bpp;
-	vga_addr = (unsigned char *)0xA0000;
+	vga_addr = kmalloc(vga_width * vga_height);
 	
 	/* enable mode 13 */
 	vga_write_regs(mode_a);
+
+	/* write color palette info */
+	for (int i = 0; i < 256; i++) {
+
+		portbout(VGA_DAC_WRITE_IDX, i);
+		portbout(VGA_DAC_DATA, vga_palette[i * 3] & 0x3f);
+		portbout(VGA_DAC_DATA, vga_palette[i * 3 + 1] & 0x3f);
+		portbout(VGA_DAC_DATA, vga_palette[i * 3 + 2] & 0x3f);
+	}
 	
 	/* clear screen */
 	vga_cls();
+}
+
+/* set pixel */
+extern void vga_set_pixel(int x, int y, u8 c) {
+
+	if (x < 0 || x >= vga_width || y < 0 || y >= vga_height) return;
+	vga_addr[(y * vga_width) + x] = c;
+}
+
+/* draw character */
+static void _vga_draw_char(int px, int py, int c, int f) {
+
+	if (c < 0 || c >= 256) return;
+
+	/* get array ptr */
+	u8 *g = &vga_font[c * 8];
+	for (int y = 0; y < 8; y++) {
+		for (int x = 0; x < 8; x++) {
+			if (g[y] & (1 << x)) vga_set_pixel(px + x, py + y, vga_font_color);
+			else if (f) vga_set_pixel(px + x, py + y, 0);
+		}
+	}
+}
+
+/* draw character */
+extern void vga_draw_char(int px, int py, int c) {
+
+	_vga_draw_char(px, py, c, 0);
+}
+
+/* draw character with background */
+extern void vga_draw_char_fill(int px, int py, int c) {
+
+	_vga_draw_char(px, py, c, 1);
+}
+
+/* update screen */
+extern void vga_update(void) {
+
+	memcpy(vga_intern_addr, vga_addr, vga_width * vga_height);
 }

@@ -1,78 +1,67 @@
+#include "../types.h"
 #include "heap.h"
-#include "../include/string.h"
 
-/* first heap node */
-static struct block_hdr *first = (struct block_hdr *)0x800000; /* start of heap memory */
-static size_t dmem_size = 0x800000; /* size of dynamic memory */
+static struct heap_block_hdr *head = (void *)0x100000;
 
-/* initialise dynamic memory */
+/* initialize heap */
 extern void heap_init(void) {
 
-	/* set values of first node */
-	first->sz = 1;
-	first->p = NULL;
-	first->n = NULL;
-	first->used = 1;
-	
-	memset((void *)first, 0, dmem_size);
+	head->sz = 0;
+	head->av = 0;
+	head->p = NULL;
+	head->n = head + 1;
+
+	/* next */
+	head->n->sz = 0;
+	head->n->av = 1;
+	head->n->p = head;
+	head->n->n = NULL;
 }
 
-/* find new block */
-extern struct block_hdr *heap_next_node(size_t sz) {
+/* find unused block */
+extern struct heap_block_hdr *heap_find(struct heap_block_hdr *b, size_t sz) {
 
-	/* start from first block */
-	struct block_hdr *cur = first;
-	struct block_hdr *blk = NULL;
-	u32 pos = sizeof(struct block_hdr) + cur->sz;
-	
-	/* loop through blocks until we reach the end or we find something that works */
-	while (pos < dmem_size && blk == NULL && cur != NULL) {
+	struct heap_block_hdr *p = b;
+	while (p != NULL) {
 
-		/* unused block */
-		if (!cur->used && (cur->sz >= sz || (cur->n != NULL && sz <= ((void *)(cur->n) - (void *)(cur) + sizeof(struct block_hdr))) || (cur->n == NULL && (pos + sizeof(struct block_hdr) + sz) < dmem_size))) {
-			
-			blk = cur;
-		}
-		
-		/* no next node */
-		else if (cur->n == NULL && (pos + sizeof(struct block_hdr) + sz) < dmem_size) {
+		/* usable */
+		if ((p->sz >= sz || p->n == NULL) && p->av)
+			return p;
 
-			blk = (struct block_hdr *)(0x800000 + pos);
-			cur->n = blk;
-			blk->p = cur;
-		}
-		
-		/* advance */
-		cur = cur->n;
-		if (cur != NULL) pos += sizeof(struct block_hdr) + cur->sz;
+		p = p->n;
 	}
-	
-	/* return pointer */
-	return blk;
+	return NULL;
 }
 
-/* (attempt to) malloc memory */
+/* allocate */
 extern void *kmalloc(size_t sz) {
 
-	/* find block */
-	struct block_hdr *blk = heap_next_node(sz);
+	struct heap_block_hdr *b = heap_find(head, sz);
+	if (b == NULL) return NULL;
 
-	if (blk == NULL)
-		return NULL;
-	
-	/* set values */
-	blk->sz = sz;
-	blk->used = 1;
-	
-	/* return pointer */
-	return ((void *)blk) + sizeof(struct block_hdr);
+	/* set base values */
+	b->sz = sz;
+	b->av = 0;
+
+	/* set values for next */
+	if (b->n == NULL) {
+		
+		b->n = (void *)(b + 1) + sz;
+		b->n->sz = 0;
+		b->n->av = 1;
+		b->n->p = b;
+		b->n->n = NULL;
+	}
+
+	/* return data pointer */
+	return (void *)(b + 1);
 }
 
-/* free memory */
+/* free */
 extern void kfree(void *p) {
 
-	struct block_hdr *blk = p - sizeof(struct block_hdr);
+	struct heap_block_hdr *b = (struct heap_block_hdr *)p - 1;
 
-	/* set to unused */
-	blk->used = 0;
+	/* set values */
+	b->av = 1;
 }

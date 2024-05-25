@@ -68,8 +68,7 @@ extern void ata_init(void) {
 		hd0 = 1;
 
 		/* found disk 0 */
-		char *s = "[ata] found disk 0\n";
-		write(1, s, strlen(s));
+		kprint("[ata] found disk 0\n");
 	}
 
 	int i;
@@ -93,8 +92,7 @@ extern void ata_init(void) {
 	portbout(0x1f6, 0xe0 | (0 << 4));
 	
 	/* print if we are using disk 1 */
-	char *hd_sm = "[ata] found disk 1\n";
-	if (hd1) write(1, hd_sm, strlen(hd_sm));
+	if (hd1) kprint("[ata] found disk 1\n");
 }
 
 /* start lba data request */

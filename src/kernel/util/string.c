@@ -20,6 +20,18 @@ extern int strcmp(char *a, char *b) {
 	return (int)a[i] - (int)b[i];
 }
 
+/* find first c */
+extern char *strchr(char *s, char c) {
+
+	char n = 0;
+	while ((n = *s) != 0) {
+
+		if (n == c) return s;
+		s++;
+	}
+	return NULL;
+}
+
 /* copy n bytes from a to b */
 extern void *memcpy(void *b, void *a, size_t n) {
 

@@ -18,7 +18,7 @@
 #include "util.h"
 #include "page.h"
 #include "panic.h"
-#include "fs/ext2.h"
+#include "fs/fat.h"
 #include "dev.h"
 #include "heap.h"
 #include "video/vga16.h"
@@ -36,16 +36,19 @@ int kmain(void) {
 	/* load idt */
 	isr_install();
 
-	/* clear the screen buffer */
-	kcls();
+	/* initialize heap */
+	heap_init();
+
+	/* initialize vga driver */
+	vga_init(320, 200, 256);
+	vga_update();
+
+	/* initialize text */
+	ktextinit();
 	
 	/* initilize paging */
 	kprint("[kernel] initializing paging...\n");
 	paging_enable();
-
-	/* initialize heap */
-	kprint("[kernel] initializing heap...\n");
-	heap_init();
 
 	/* intialize ata */
 	kprint("[kernel] initializing ata port...\n");
@@ -55,35 +58,27 @@ int kmain(void) {
 	kprint("[kernel] mounting vfs...\n");
 	fs_init();
 
-	/* mount ext2fs */
-	int res = ext2_check_sig(0);
-	struct fs_node ext2_root = {.name = "/", .inode = 2, .dev = 0, .part = 1};
-	struct fs_node *n = ext2_finddir(&ext2_root, "lost+found");
-	kprinthex((u32)n);
-	if (n != NULL) {
-		kprintc(' ');
-		kprint(n->name);
-		kprintc(' ');
-		kprinthex(n->inode);
-	}
-	kprintnl();
-
 	/* search for a root device and partition */
-	//s = "[kernel] searching for root device...\n";
-	//write(1, s, strlen(s));
-	//rp = dev_init_root();
+	kprint("[kernel] searching for root device...\n");
+	rp = dev_init_root();
 
 	/* print info for device */
-	//kprint("[kernel] root device is ");
-	//kprinthex(rp.dev);
-	//kprintnl();
+	kprint("[kernel] root device is ");
+	kprinthex(rp.dev);
+	kprintnl();
 
-	/* test vga16 */
-	//vga_init(320, 200, 256);
-	
-	//for (int y = 0; y < 200; y++)
-	//	for (int x = 0; x < 320; x++)
-	//		vga_addr[(y * 320) + x] = 0x3;
+	/* mount filesystems */
+	kprint("[kernel] searching for filesystems on root device...\n");
+	if (fat_check_sig(rp.dev)) kprint("[kernel] root filesystem is fat\n");
 
-	return 0; /* exit */
+	/* demo */
+	char buf[8];
+	while (1) {
+		kgets(buf, 8);
+		kprint(buf);
+		kprintnl();
+	}
+
+	/* exit */
+	return 0;
 }

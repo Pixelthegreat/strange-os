@@ -1,6 +1,7 @@
 #include "mbr.h"
 #include "ata.h"
 #include "../../include/string.h"
+#include "../kprint.h"
 
 int mbr_loaded = 0;
 u8 mbr_buf[512];

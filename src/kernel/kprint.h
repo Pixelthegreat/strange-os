@@ -1,37 +1,30 @@
-/* kprint -- module for the terminal printing functions */
-#ifndef _KPRINT_H
-#define _KPRINT_H
+#ifndef KPRINT_H
+#define KPRINT_H
 
-/* types */
 #include "../types.h"
-#include "idt.h" /* registers type */
-
-/* scancodes */
-#define SCANCODE_BACKSPACE (u8)(0x0E) /* backspace key */
-#define SCANCODE_SHIFT_DOWN (u8)(0x2A) /* shift key down */
-#define SCANCODE_SHIFT_UP (u8)(0xAA) /* shift key up */
+#include "idt.h"
 
 /* macros */
-#define VGA_WIDTH 80 /* width of the vga text mode screen */
-#define VGA_HEIGHT 25 /* height of the vga text mode screen */
-#define VGA_DEFAULT_COLOR 0x08 /* default vga color when clearing the screen */
-#define VGA_CTRL_REGISTER 0x3d4 /* control/command port for the vga system */
-#define VGA_DATA_REGISTER 0x3d5 /* data for VGA_CTRL_REGISTER */
-#define VGA_OFFSET_LOW 0x0f
-#define VGA_OFFSET_HIGH 0x0e
+#define SCANCODE_BACKSPACE (u8)(0x0e)
+#define SCANCODE_SHIFT_DOWN (u8)(0x2a)
+#define SCANCODE_SHIFT_UP (u8)(0xaa)
+
+#define KPRINT_WIDTH 40
+#define KPRINT_HEIGHT 25
 
 /* functions */
-extern int kprint(char *); /* print text (returns result) */
-extern int kprintc(char); /* print character (returns result) */
-extern int kcls(void); /* clear the terminal screen */
-extern int kprintcs(char, u8); /* print a character with a color */
-extern int kprints(char *, u8); /* print a string with a color */
-extern int kprintnl(void); /* print new line character */
-extern int kscroll(void); /* scroll up if necessary */
-extern u8 kgetsc(void); /* get scancode */
-extern void kbint(registers *); /* keyboard interrupt */
-extern char kgetc(void); /* get a character from stdin */
-extern void kprinthex(unsigned int); /* print hexadecimal number */
-extern char *kgets(void); /* get a string of characters */
+extern void ktextinit(void); /* initialize text engine */
+extern void kcls(void); /* clear screen */
+extern void kprint(const char *s); /* print string */
+extern void kprintc(char c); /* print character */
+extern void kprinthex(u32 h); /* print hexadecimal number */
+extern void kprintnl(void); /* print newline */
+extern void kscroll(void); /* update scrolling */
+extern void kflush(void); /* flush output */
 
-#endif /* _KPRINT_H */
+extern void kbint(registers *regs); /* keyboard interrupt */
+extern u8 kgetsc(void); /* get scancode */
+extern char kgetc(void); /* get character */
+extern void kgets(char *buf, size_t sz); /* get string */
+
+#endif /* KPRINT_H */

@@ -1,41 +1,24 @@
-/* page tables and stuff */
-#ifndef _PAGE_H
-#define _PAGE_H
+#ifndef PAGE_H
+#define PAGE_H
 
-#include "../types.h" /* types */
+#include "../types.h"
 
-/* page */
-struct page {
-	union {
-		struct {
-			u32 p:1; /* if the page is present */
-			u32 rw:1; /* if the page is writable */
-			u32 user:1; /* if the page is in userland */
-			u32 acc:1; /* if the page has been accessed */
-			u32 d:1; /* ??? */
-			u32 unused:7; /* unused */
-			u32 frame:20; /* location of page */
-		};
-		u32 v; /* value in int form */
-	};
-};
+/* page entries */
+#define PAGE_DIR_ENT(a) ((u32)(a) & 0xffffe000)
+#define PAGE_TAB_ENT(a) ((u32)(a) & 0xfffff000)
 
-/* multiple pages */
-struct pages {
-	struct page *p; /* first page */
-	size_t       pn; /* number of pages */
-};
+#define PAGE_ENT_P 0x1
+#define PAGE_ENT_RW 0x2
+#define PAGE_ENT_US 0x4
+#define PAGE_ENT_PWT 0x8
+#define PAGE_ENT_PCD 0x10
+#define PAGE_ENT_A 0x20
+#define PAGE_ENT_D 0x40
+#define PAGE_ENT_PS 0x80
+#define PAGE_ENT_G 0x100
+#define PAGE_ENT_PAT 0x1000
 
-/* enable paging */
+/* page table */
 extern void paging_enable(void);
 
-/* allocate a page table */
-//extern struct page_table page_alloc(int, int);
-//extern void page_free(struct page_table);
-extern void page_alloc(struct page *, int, int); /* allocate page */
-extern struct pages page_malloc(size_t, int, int); /* allocate multiple pages */
-extern void page_free(struct page *); /* free a page */
-extern void page_mfree(struct pages);
-extern void paging_update(void); /* update tlb */
-
-#endif /* _PAGE_H */
+#endif /* PAGE _H */

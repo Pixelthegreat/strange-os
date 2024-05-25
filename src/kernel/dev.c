@@ -4,6 +4,7 @@
 #include "panic.h"
 #include "util.h"
 #include "disk/mbr.h"
+#include "kprint.h"
 
 /* find root device and partition */
 extern struct dev_part dev_init_root(void) {
@@ -41,9 +42,9 @@ extern struct dev_part dev_init_root(void) {
 	for (i = 1; i <= 4; i++) {
 	
 		p.pe = mbr_get_part_entry_buf((void *)&buf, i);
-		
+
 		/* right partition type */
-		if (p.pe.p_type == MBR_TYPE_LINUX && p.pe.attrs & MBR_BOOTABLE)
+		if ((p.pe.p_type == MBR_TYPE_LINUX || MBR_TYPE_IS_FAT(p.pe.p_type)) && p.pe.attrs & MBR_BOOTABLE)
 			break;
 	}
 	

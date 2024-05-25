@@ -1,4 +1,5 @@
 #include "ext2.h"
+#include "fs.h"
 #include "../panic.h"
 #include "../disk/ata.h"
 #include "../disk/mbr.h"
@@ -34,6 +35,11 @@ static int ext2_sb_info_n = 0;
 static int ext2_sb_info_c = 8;
 
 static char *randbuf = NULL; /* buffer for storing stuff */
+
+struct fs_info ext2_fs_info = {
+	.rd = ext2_readdir,
+	.fd = ext2_finddir,
+};
 
 /* get block group of inode */
 #define EXT2_BLOCKGROUP(e, inode) (((inode) - 1) / (e)->sb->nipg)
@@ -90,41 +96,28 @@ extern int ext2_check_sig(int dev) {
 				e->rootdir = NULL; /* root directory inode */
 				e->rootdir_buf = NULL; /* root directory inode data buffer */
 				
-				/* malloc some sb stuff */
+				/* copy superblock data */
 				struct ext2_sb *sb = (struct ext2_sb *)kmalloc(1024);
-				memcpy(sb, sbb, 1024); /* copy superblock data */
+				memcpy(sb, sbb, 1024);
 				e->sb = sb;
+
 				/* load block group descriptor table */
 				ext2_load_bgdt(e);
 
 				/* set value */
 				ext2fs |= (1 << (i-1));
 
-				/* read root directory inode */
-				//char *rootdir_buf = (char *)kmalloc(128);
-				//struct ext2_inode *rootdir = (struct ext2_inode *)rootdir_buf;
-
-				//ext2_read_inode(e, 2, rootdir);
-
-				//char *dbuf = ext2_read_data(e, rootdir);
-
-				/* print dirents */
-				//int i = 0;
-				//while (dbuf[i]) {
-
-				//	struct ext2_dirent *de = (void *)(dbuf + i);
-
-					/* print name */
-				//	for (int j = 0; j < de->nl; j++) kprintc(de->name[j]);
-				//	kprintnl();
-
-				//	i += de->esz;
-				//}
-				//struct fs_node *node = (struct fs_node *)kmalloc(sizeof(struct fs_node));
-				//memset(node, 0, sizeof(struct fs_node));
-				
-				/* set stuff */
-				//
+				/* set root */
+				if (!fs_root->ptr) {
+					
+					struct fs_node *nroot = fs_alloc(NULL);
+					nroot->flags = FS_DIR;
+					nroot->inode = 2;
+					nroot->dev = dev;
+					nroot->part = i;
+					nroot->fs = &ext2_fs_info;
+					fs_root->ptr = nroot;
+				}
 			}
 		}
 	}
@@ -269,10 +262,16 @@ extern struct fs_node *ext2_finddir(struct fs_node *n, char *name) {
 		/* compare */
 		if (kstreq(namebuf, name)) {
 
-			nd = (struct fs_node *)kmalloc(sizeof(struct fs_node));
-			memcpy(nd->name, de->name, de->nl);
-			nd->name[de->nl] = 0;
+			nd = fs_alloc(n);
+			strcpy(nd->name, namebuf);
 			nd->inode = de->inode;
+
+			/* read inode */
+			struct ext2_inode *p = (struct ext2_inode *)namebuf;
+			ext2_read_inode(e, de->inode, p);
+			nd->flags = 0;
+			if (p->tp & EXT2_DIR) nd->flags = FS_DIR;
+			else if (p->tp & EXT2_REG) nd->flags = FS_FILE;
 		}
 	}
 
@@ -294,7 +293,7 @@ extern struct dirent *ext2_readdir(struct fs_node *n, u32 idx) {
 	struct ext2_inode *p = (struct ext2_inode *)_in;
 	
 	ext2_read_inode(e, n->inode, p);
-	
+
 	/* check type */
 	if (!(p->tp & EXT2_DIR))
 		return NULL;
@@ -306,18 +305,21 @@ extern struct dirent *ext2_readdir(struct fs_node *n, u32 idx) {
 	struct dirent *nd = NULL;
 	int i = 0, x = 0;
 	
-	while (!n && i < idx + 1) {
+	while (i < idx + 1) {
 
 		/* get dirent */
 		struct ext2_dirent *de = (struct ext2_dirent *)&buf[x];
-		
+
+		int ib = !de->inode || de->esz > (de->nl + 8);
+
 		/* at the end */
-		if (!de->inode && x > ALIGN(p->sz_low, 1024) - 1024) break;
+		if (x >= p->sz_low) {
+			break;
+		}
 		
-		else if (!de->inode) x = ALIGN(x, 1024);
-		else x += de->esz;
-		
-		i++;
+		//else if (ib) x = ALIGN(x, 1024);
+		//else x += de->esz;
+		x += de->esz;
 		
 		/* create directory entry */
 		if (i == idx) {
@@ -327,6 +329,7 @@ extern struct dirent *ext2_readdir(struct fs_node *n, u32 idx) {
 			memcpy(nd->name, de->name, de->nl);
 			nd->inode = de->inode;
 		}
+		i++;
 	}
 	
 	/* free buffer */

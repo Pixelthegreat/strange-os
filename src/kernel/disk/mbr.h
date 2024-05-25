@@ -6,6 +6,18 @@
 
 /* macros */
 #define MBR_TYPE_LINUX 0x83
+#define MBR_TYPE_FAT16_A 0x04
+#define MBR_TYPE_FAT16_B 0x06
+#define MBR_TYPE_FAT16_C 0x0e
+#define MBR_TYPE_FAT32_A 0x0b
+#define MBR_TYPE_FAT32_B 0x0c
+
+#define MBR_TYPE_IS_FAT(t) ((t) == MBR_TYPE_FAT16_A || (t) == MBR_TYPE_FAT16_B || (t) == MBR_TYPE_FAT16_C || (t) == MBR_TYPE_FAT32_A || (t) == MBR_TYPE_FAT32_B)
+
+#define MBR_TYPE_IS_FAT16(t) ((t) == MBR_TYPE_FAT16_A || (t) == MBR_TYPE_FAT16_B || (t) == MBR_TYPE_FAT16_C)
+
+#define MBR_TYPE_IS_FAT32(t) ((t) == MBR_TYPE_FAT32_A || (t) == MBR_TYPE_FAT32_B)
+
 #define MBR_BOOTABLE (1 << 7)
 
 /* mbr partition entry */

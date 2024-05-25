@@ -33,7 +33,6 @@ loader:
 	;jmp loader_start
 
 loader_start:
-
 	cli ; clear interrupts ;
 	call kmain
 
@@ -43,5 +42,6 @@ loader_start:
 	
 section .data
 	msg db "hello, world!", 0
+	
 section .bss
 	buffer resb 512 ; temporary ata reading buffer ;

@@ -33,10 +33,15 @@ extern int vga_width;
 extern int vga_height;
 extern int vga_bpp;
 extern u8 *vga_addr;
+extern u8 vga_font_color;
 
 /* functions */
 extern void vga_write_regs(unsigned char *regs);
 extern void vga_cls(void);
 extern void vga_init(int w, int h, int bpp);
+extern void vga_set_pixel(int x, int y, u8 c);
+extern void vga_draw_char(int px, int py, int c);
+extern void vga_draw_char_fill(int px, int py, int c);
+extern void vga_update(void);
 
 #endif /* VGA16_H */

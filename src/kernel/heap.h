@@ -1,22 +1,20 @@
-/* kernel heap memory */
-#ifndef _HEAP_H
-#define _HEAP_H
+#ifndef HEAP_H
+#define HEAP_H
 
-#include "../types.h" /* universal types */
+#include "../types.h"
 
-/* heap block header */
-struct block_hdr {
-	size_t sz; /* number of bytes block uses */
-	u8 used; /* node is being used */
-	struct block_hdr *p; /* previous block header */
-	struct block_hdr *n; /* next block header */
+struct heap_block_hdr {
+	size_t sz; /* size of block */
+	int av; /* available */
+	struct heap_block_hdr *p; /* previous */
+	struct heap_block_hdr *n; /* next */
 };
 
 /* functions */
-extern void heap_init(void); /* intialize heap */
-extern struct block_hdr *heap_next_node(size_t); /* search for an available node */
-extern void *kmalloc(size_t); /* allocate some heap memory */
-extern void *krealloc(void *, size_t); /* reallocate some heap memory */
-extern void kfree(void *); /* free some heap memory */
+extern void heap_init(void); /* initialize heap */
+extern struct heap_block_hdr *heap_find(struct heap_block_hdr *b, size_t sz);
 
-#endif /* _HEAP_H */
+extern void *kmalloc(size_t sz);
+extern void kfree(void *p);
+
+#endif /* HEAP_H */

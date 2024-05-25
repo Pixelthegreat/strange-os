@@ -108,6 +108,8 @@ struct ext2_dirent {
 	char name[1]; /* name characters */
 };
 
+extern struct fs_info ext2_fs_info; /* functions */
+
 extern int ext2_check_sig(int); /* check if there is an ext2 filesystem on a device */
 extern struct fs_node *ext2_finddir(struct fs_node *, char *); /* find file */
 extern struct dirent *ext2_readdir(struct fs_node *, u32); /* read directory entry */

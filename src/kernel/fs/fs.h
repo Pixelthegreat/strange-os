@@ -14,6 +14,12 @@
 #define FS_SLNK 0x06
 #define FS_MNTP 0x08
 
+#define FS_TYPE 0xf
+#define FS_NODE_TYPE(n) ((n)->flags & FS_TYPE)
+
+#define FS_MODE_R 0x01
+#define FS_MODE_W 0x02
+
 struct fs_info;
 
 /* directory entry */
@@ -33,7 +39,7 @@ struct fs_node {
 	u32 gid; /* owning group */
 	u32 inode; /* number of node in filesystem (applies to some but not all) */
 	u32 len; /* length/size of file in bytes */
-	u32 impl;
+	u32 impl; /* implementation value */
 	kdev_t dev; /* device that the node is on */
 	int part; /* partition */
 	struct fs_info *fs; /* filesystem info */
@@ -41,13 +47,21 @@ struct fs_node {
 	struct dirent *first; /* first entry for directory */
 };
 
+/* file */
+struct fs_file {
+	struct fs_node *n; /* node */
+	u32 m; /* mode (r/w) */
+	u32 idx; /* index in file */
+	void *d; /* extra fs data */
+};
+
 /* function types */
-typedef u32 (*fs_read_t)(struct fs_node *, u32, u32, u8 *);
-typedef u32 (*fs_write_t)(struct fs_node *, u32, u32, u8 *);
-typedef void (*fs_open_t)(struct fs_node *);
-typedef void (*fs_close_t)(struct fs_node *);
-typedef struct dirent * (*fs_readdir_t)(struct fs_node *, u32);
-typedef struct fs_node * (*fs_finddir_t)(struct fs_node *, char *);
+typedef u32 (*fs_read_t)(struct fs_file *, u32, u8 *);
+typedef u32 (*fs_write_t)(struct fs_file *, u32, u8 *);
+typedef struct fs_file *(*fs_open_t)(struct fs_node *, u32);
+typedef void (*fs_close_t)(struct fs_file *);
+typedef struct dirent *(*fs_readdir_t)(struct fs_node *, u32);
+typedef struct fs_node *(*fs_finddir_t)(struct fs_node *, char *);
 
 extern struct fs_node *fs_root; /* root of the filesystem */
 
@@ -68,11 +82,14 @@ struct fs_info {
 
 /* functions */
 extern int fs_init(void); /* intialize */
+extern struct fs_node *fs_alloc(struct fs_node *p); /* allocate node */
+extern struct dirent *fs_dirent_alloc(void); /* allocate dirent */
 extern u32 fs_read(struct fs_node *, u32, u32, u8 *); /* read to buffer */
 extern u32 fs_write(struct fs_node *, u32, u32, u8 *); /* write to buffer */
-extern void fs_open(struct fs_node *); /* open file */
+extern void fs_open(struct fs_node *, u32); /* open file */
 extern void fs_close(struct fs_node *); /* close file */
 extern struct dirent *fs_readdir(struct fs_node *, u32); /* read from a directory listing */
 extern struct fs_node *fs_finddir(struct fs_node *, char *); /* find a directory */
+extern struct fs_node *fs_finddir_path(struct fs_node *, char *); /* find a file with path */
 
 #endif /* _FS_H */
