@@ -12,6 +12,9 @@
 #define KPRINT_WIDTH 40
 #define KPRINT_HEIGHT 25
 
+/* driverctl commands */
+#define KBD_CMD_WAIT_KEY 0x10
+
 /* functions */
 extern void ktextinit(void); /* initialize text engine */
 extern void kcls(void); /* clear screen */
@@ -23,6 +26,7 @@ extern void kscroll(void); /* update scrolling */
 extern void kflush(void); /* flush output */
 
 extern void kbint(registers *regs); /* keyboard interrupt */
+extern u32 kbctl(u32 cmd, u32 p); /* keyboard driverctl */
 extern u8 kgetsc(void); /* get scancode */
 extern char kgetc(void); /* get character */
 extern void kgets(char *buf, size_t sz); /* get string */

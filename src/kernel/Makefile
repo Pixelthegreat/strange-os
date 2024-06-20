@@ -14,7 +14,7 @@ CFLAGS=-c -m32 -ffreestanding -fno-pie -nostdlib -nostartfiles -nodefaultlibs -O
 ASMFLAGS=-f$(ASMARCH)
 LDFLAGS=-T src/kernel/linker.ld -m$(LDARCH) -O0
 
-OBJFILES=build/multiboot.o build/loader.o build/kernel.o build/kprint.o build/idt.o build/util.o build/syscall.o build/ata.o build/page.o build/panic.o build/mbr.o build/dev.o build/heap.o build/fs.o build/string.o build/vga16.o build/fat.o build/vpal.o build/font.o build/fileio.o build/process.o build/elf.o build/abin.o
+OBJFILES=build/multiboot.o build/loader.o build/kernel.o build/kprint.o build/idt.o build/util.o build/syscall.o build/ata.o build/page.o build/panic.o build/mbr.o build/dev.o build/heap.o build/fs.o build/string.o build/vga16.o build/fat.o build/vpal.o build/font.o build/fileio.o build/process.o build/elf.o build/abin.o build/driver.o
 
 all: kernel
 
@@ -114,3 +114,7 @@ build/elf.o: src/kernel/elf.c src/kernel/elf.h
 build/abin.o: src/kernel/abin.c src/kernel/abin.h
 	$(CFILENAME)
 	$(CC) $(CFLAGS) -o build/abin.o src/kernel/abin.c
+
+build/driver.o: src/kernel/driver.c src/kernel/driver.h
+	$(CFILENAME)
+	$(CC) $(CFLAGS) -o build/driver.o src/kernel/driver.c

@@ -4,6 +4,7 @@
 #include "process.h"
 #include "fileio.h"
 #include "page.h"
+#include "driver.h"
 
 /* syscall interrupt handler */
 extern void ksysint(registers *r) {
@@ -54,6 +55,14 @@ extern void ksysint(registers *r) {
 			if ((n = kgetnode(r->ebx)) == NULL) break;
 			if ((dent = fs_readdir(n, r->ecx)) == NULL) break;
 			r->eax = (u32)dent; /* to be implemented better */
+			break;
+		}
+		case 0x08: { /* driverid */
+			r->eax = (u32)driver_get_id((const char *)r->ebx);
+			break;
+		}
+		case 0x09: { /* driverctl */
+			r->eax = (u32)driver_control(r->ebx, r->ecx, r->edx);
 			break;
 		}
 		default:

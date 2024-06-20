@@ -44,4 +44,12 @@ extern void vga_draw_char(int px, int py, int c);
 extern void vga_draw_char_fill(int px, int py, int c);
 extern void vga_update(void);
 
+/* driverctl */
+#define VIDEO_CMD_GET_WIDTH 0x10
+#define VIDEO_CMD_GET_HEIGHT 0x11
+#define VIDEO_CMD_SET_INDEX 0x12
+#define VIDEO_CMD_SET_PIXEL 0x13
+
+extern u32 vga_driverctl(u32 cmd, u32 p);
+
 #endif /* VGA16_H */

@@ -14,7 +14,7 @@ CFLAGS=-c -m32 -ffreestanding -fno-pie -nostdlib -nostartfiles -nodefaultlibs -I
 ASMFLAGS=-f$(ASMARCH)
 LDFLAGS=build/header.o build/stdlib.a -T src/user/linker.ld -m$(LDARCH)
 
-all: header init sh echo ls cat
+all: header init sh echo ls cat hexd gfxtest
 
 # simple header to load entry point #
 header: src/user/header.asm
@@ -65,3 +65,21 @@ cat: build/cat.o
 build/cat.o: src/user/cat.c
 	$(CFILENAME)
 	$(CC) $(CFLAGS) -o build/cat.o src/user/cat.c
+
+# hexdump #
+hexd: build/hexd.o
+	$(LFILENAME)
+	$(LD) -o build/user/hexd build/hexd.o $(LDFLAGS)
+
+build/hexd.o: src/user/hexd.c
+	$(CFILENAME)
+	$(CC) $(CFLAGS) -o build/hexd.o src/user/hexd.c
+
+# graphics test #
+gfxtest: build/gfxtest.o
+	$(LFILENAME)
+	$(LD) -o build/user/gfxtest build/gfxtest.o $(LDFLAGS)
+
+build/gfxtest.o: src/user/gfxtest.c
+	$(CFILENAME)
+	$(CC) $(CFLAGS) -o build/gfxtest.o src/user/gfxtest.c

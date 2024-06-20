@@ -1,6 +1,6 @@
 /* init program that loads the shell */
 #include "_syscall.h"
-#include "unistd.h"
+#include "starch.h"
 #include "string.h"
 
 #define SHELL_BUFSZ 32

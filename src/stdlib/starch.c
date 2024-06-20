@@ -1,6 +1,6 @@
 #include "../types.h"
 #include "../include/_syscall.h"
-#include "../include/unistd.h"
+#include "../include/starch.h"
 
 /* open */
 extern int _std_open(const char *p, const char *m) {
@@ -36,4 +36,16 @@ extern int _std_exec(const char *p, char *argv, char **envp) {
 extern const char *_std_readdir(int fd, u32 idx) {
 
 	return (const char *)_syscall3(_SYS_READDIR, (u32)fd, idx, 0);
+}
+
+/* get driver id */
+extern int _std_driverid(const char *name) {
+
+	return (int)_syscall3(_SYS_DRIVERID, (u32)name, 0, 0);
+}
+
+/* send command to driver */
+extern u32 _std_driverctl(int id, u32 cmd, u32 p) {
+
+	return _syscall3(_SYS_DRIVERCTL, (u32)id, cmd, p);
 }

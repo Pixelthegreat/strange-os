@@ -112,6 +112,20 @@ extern void kbint(registers *regs) {
 	cursc = (portbin(0x60));
 }
 
+/* keyboard driverctl */
+extern u32 kbctl(u32 cmd, u32 p) {
+
+	switch (cmd) {
+		case KBD_CMD_WAIT_KEY:
+			u8 sc;
+			while ((sc = kgetsc()) > 58);
+			return (u32)sc;
+		default:
+			break;
+	}
+	return 0;
+}
+
 /* get scancode */
 extern u8 kgetsc(void) {
 

@@ -15,6 +15,7 @@
 #include "fileio.h"
 #include "process.h"
 #include "abin.h"
+#include "driver.h"
 
 //#define KDEBUG
 
@@ -90,6 +91,8 @@ int kmain(void) {
 		kpanic(E_NOFS, "failed to load init\n");
 	}
 	else kprint("[kernel] sucessfully loaded init\n");
+
+	driver_init();
 
 	/* jump to process */
 	process_map();

@@ -8,6 +8,7 @@
 #include "font.h"
 
 static u8 *const vga_intern_addr = (u8 *)0xA0000;
+static u32 drvidx = 0; /* index for driverctl command */
 
 /* values */
 int vga_width = 0;
@@ -165,4 +166,28 @@ extern void vga_draw_char_fill(int px, int py, int c) {
 extern void vga_update(void) {
 
 	memcpy(vga_intern_addr, vga_addr, vga_width * vga_height);
+}
+
+/* vga driverctl handler */
+extern u32 vga_driverctl(u32 cmd, u32 p) {
+
+	switch (cmd) {
+		/* get width */
+		case VIDEO_CMD_GET_WIDTH:
+			return vga_width;
+		/* get height */
+		case VIDEO_CMD_GET_HEIGHT:
+			return vga_height;
+		/* set index */
+		case VIDEO_CMD_SET_INDEX:
+			if (p < vga_width * vga_height) drvidx = p;
+			return 0;
+		/* set pixel */
+		case VIDEO_CMD_SET_PIXEL:
+			vga_intern_addr[drvidx] = (u8)p;
+			return 0;
+		default:
+			break;
+	}
+	return 0;
 }
