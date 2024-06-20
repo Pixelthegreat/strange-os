@@ -19,6 +19,7 @@ sudo mount "/dev/mapper/$looppart" ../tmp
 sudo mkdir -pv ../tmp/boot
 sudo mkdir -pv ../tmp/boot/grub
 sudo cp -rnv ../grub/system/* ../tmp
+sudo cp -rnv user/* ../tmp/bin
 
 # copy kernel
 sudo cp -v ./strange ../tmp/boot/

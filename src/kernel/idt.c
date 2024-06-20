@@ -35,12 +35,15 @@ extern void isr_handler(registers *r) {
 	kprintnl();
 	
 	/* page fault */
-	if (r->int_no == 14)
+	if (r->int_no == 14) {
+		kprint("error code: ");
+		kprinthex(r->err_code);
+		kprintnl();
 		kpanic(E_PAGEFLT, "page fault\n");
+	}
 
 	/* otherwise */
-	else
-		kpanic(E_CPUERR, "cpu error\n");
+	else kpanic(E_CPUERR, "cpu error\n");
 }
 
 /* handle an irq */

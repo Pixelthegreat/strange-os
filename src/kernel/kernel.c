@@ -1,18 +1,8 @@
 /* include */
-#include "idt.h" /* interrupt descriptor table */
-#include "gdt.h" /* global descriptor table */
-
-/* utils */
+#include "idt.h"
 #include "kprint.h"
-
-/* stdlib */
-#include "../include/unistd.h"
 #include "../include/string.h"
-
-/* types */
 #include "../types.h"
-
-/* kernel stuff */
 #include "disk/ata.h"
 #include "kprint.h"
 #include "util.h"
@@ -22,16 +12,28 @@
 #include "dev.h"
 #include "heap.h"
 #include "video/vga16.h"
+#include "fileio.h"
+#include "process.h"
+#include "abin.h"
 
-char buffer[512]; /* disk sector buffer */
+//#define KDEBUG
 
-struct dev_part rp; /* root partition stuff */
+extern void flush_tss(void);
+extern void jump_user(void);
+
+static char buffer[512];
+
+static struct dev_part rp; /* root partition stuff */
+
+/* update stack pointer in tss */
+extern void kernel_set_stack(u32 addr) {
+
+	*(u32 *)0xa004 = addr; /* esp0 */
+	flush_tss();
+}
 
 /* entry point function -- called by kernel loader */
 int kmain(void) {
-	
-	/* initialise gdt */
-	init_gdt();
 	
 	/* load idt */
 	isr_install();
@@ -58,6 +60,10 @@ int kmain(void) {
 	kprint("[kernel] mounting vfs...\n");
 	fs_init();
 
+	/* initialize file io */
+	kprint("[kernel] initializing file io...\n");
+	kfdinit();
+
 	/* search for a root device and partition */
 	kprint("[kernel] searching for root device...\n");
 	rp = dev_init_root();
@@ -68,16 +74,27 @@ int kmain(void) {
 	kprintnl();
 
 	/* mount filesystems */
-	kprint("[kernel] searching for filesystems on root device...\n");
+	kprint("[kernel] searching for filesystems...\n");
 	if (fat_check_sig(rp.dev)) kprint("[kernel] root filesystem is fat\n");
 
-	/* demo */
-	char buf[8];
-	while (1) {
-		kgets(buf, 8);
-		kprint(buf);
-		kprintnl();
+	/* search for kernel */
+	struct fs_node *kernel = fs_finddir_path(fs_root, "boot/strange");
+	if (kernel != NULL) kprint("[kernel] found kernel\n");
+
+	/* allocate process */
+	struct proc *p = process_alloc(PROCESS_WINDOW_SIZE);
+
+	/* load elf */
+	if (abin_load_file("/bin/init", p) < 0) {
+
+		kpanic(E_NOFS, "failed to load init\n");
 	}
+	else kprint("[kernel] sucessfully loaded init\n");
+
+	/* jump to process */
+	process_map();
+	flush_tss();
+	process_jump();
 
 	/* exit */
 	return 0;

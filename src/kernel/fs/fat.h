@@ -5,6 +5,15 @@
 #include "../../types.h"
 #include "fs.h"
 
+/* dirent attribs */
+#define FAT_DIRENT_READ_ONLY 0x01
+#define FAT_DIRENT_HIDDEN 0x02
+#define FAT_DIRENT_SYSTEM 0x04
+#define FAT_DIRENT_VOLUME_ID 0x08
+#define FAT_DIRENT_DIRECTORY 0x10
+#define FAT_DIRENT_ARCHIVE 0x20
+#define FAT_DIRENT_LFN 0x0f
+
 struct fat_vbr {
 	u8 jmp[3]; /* eb 3c 90 */
 	char oem[8]; /* oem label */
@@ -93,5 +102,13 @@ struct fat32_dirent_long {
 extern struct fs_info fat_fs_info; /* functions */
 
 extern int fat_check_sig(int); /* check for filesystems */
+
+/* note: these functions are NOT to be called directly */
+extern u32 fat_read(struct fs_file *fp, u32 c, void *buf); /* read file */
+extern u32 fat_write(struct fs_file *fp, u32 c, void *buf); /* write file */
+extern void fat_open(struct fs_file *fp); /* open callback */
+extern void fat_close(struct fs_file *fp); /* close callback */
+extern void fat_filldir(struct fs_node *n); /* find file in directory */
+extern void fat_create(struct fs_node *n, char *fn, u32 tp, struct dirent *d); /* create file */
 
 #endif /* FAT_H */

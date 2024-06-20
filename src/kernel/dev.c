@@ -71,3 +71,19 @@ extern void dev_read_lba(kdev_t dev, int lba, int n, void *buf) {
 	/* panic */
 	kpanic(E_NODEV, "unsupported device for reading\n");
 }
+
+/* write lba mode */
+extern void dev_write_lba(kdev_t dev, int lba, int n, void *buf) {
+
+	/* ata */
+	if (dev == DEV_ATA_HD0 || dev == DEV_ATA_HD1) {
+
+		/* write ata */
+		ata_dev(dev);
+		ata_lba_write(lba, n, buf);
+		return;
+	}
+
+	/* panic */
+	kpanic(E_NODEV, "unsupported device for writing\n");
+}

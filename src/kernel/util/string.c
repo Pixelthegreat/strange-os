@@ -9,7 +9,7 @@ extern ssize_t strlen(char *s) {
 }
 
 /* compare strings */
-extern int strcmp(char *a, char *b) {
+extern size_t strcmp(char *a, char *b) {
 
 	int i = 0;
 	while (a[i] == b[i]) {
@@ -17,7 +17,7 @@ extern int strcmp(char *a, char *b) {
 		i++;
 	}
 	if (a[i] == 0 || b[i] == 0) return 0;
-	return (int)a[i] - (int)b[i];
+	return (size_t)a[i] - (size_t)b[i];
 }
 
 /* find first c */

@@ -14,7 +14,7 @@ int vga_width = 0;
 int vga_height = 0;
 int vga_bpp = 0;
 u8 *vga_addr = NULL;
-u8 vga_font_color = 0x18;
+u8 vga_font_color = 0x7;
 
 static int vga_enabled = 0;
 

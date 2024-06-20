@@ -4,7 +4,7 @@
 #include "../types.h"
 
 /* page entries */
-#define PAGE_DIR_ENT(a) ((u32)(a) & 0xffffe000)
+#define PAGE_DIR_ENT(a) ((u32)(a) & 0xfffff000)
 #define PAGE_TAB_ENT(a) ((u32)(a) & 0xfffff000)
 
 #define PAGE_ENT_P 0x1
@@ -20,5 +20,7 @@
 
 /* page table */
 extern void paging_enable(void);
+extern void paging_map(void *v, void *p, int n); /* map address */
+extern void paging_invalidate(void); /* invalidate tlb */
 
 #endif /* PAGE _H */

@@ -3,42 +3,28 @@
 
 #include "../types.h"
 
-/* if we haven't included stdio.h, we should define this stuff... i guess */
-#ifndef _STDIO_H
+/* syscall numbers */
+#define _SYS_OPEN 1
+#define _SYS_READ 2
+#define _SYS_WRITE 3
+#define _SYS_CLOSE 4
+#define _SYS_EXEC 5
+#define _SYS_EXIT 6
+#define _SYS_READDIR 7
 
-/* default file descriptors */
-#define STDIN_FILENO 0
-#define STDOUT_FILENO 1
-#define STDERR_FILENO 2
+/* functions */
+extern int _std_open(const char *p, const char *m); /* open with mode string */
+extern size_t _std_read(int fd, void *buf, size_t n); /* read n bytes */
+extern size_t _std_write(int fd, void *buf, size_t n); /* write n bytes */
+extern void _std_close(int fd); /* close file */
+extern int _std_exec(const char *p, char *argv, char **envp); /* execute program */
+extern const char *_std_readdir(int fd, u32 idx); /* read directory entry */
 
-/* seek */
-#define SEEK_SET 0
-#define SEEK_CUR 1
-#define SEEK_END 2
-
-/* buffer size */
-#define BUFSIZ 2048
-
-#endif /* _STDIO_H */
-
-/* close file descriptor */
-extern int close(int);
-
-/* read n bytes to a buffer */
-extern ssize_t read(int, void *, size_t);
-
-/* write n bytes from a buffer to a file */
-extern ssize_t write(int, void *, size_t);
-
-/* schedule an alarm in S seconds */
-extern unsigned int alarm(unsigned int);
-
-/* sleep S seconds */
-extern unsigned int sleep(unsigned int);
-
-/* flush a buffer */
-extern int flush(int);
-
-// more to do i guess //
+#define open _std_open
+#define read _std_read
+#define write _std_write
+#define close _std_close
+#define exec _std_exec
+#define readdir _std_readdir
 
 #endif /* _UNISTD_H */

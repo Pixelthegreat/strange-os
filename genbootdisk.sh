@@ -1,4 +1,6 @@
 #!/bin/sh
+# bootdisk generation script for strange-os #
+
 MODULES='boot biosdisk part_msdos fat configfile normal multiboot2'
 
 echo generating file...
@@ -36,7 +38,7 @@ sudo cp -v grub/device.map tmp/boot/grub
 # install grub #
 echo installing grub...
 echo "(hd0) $loopdev" > grub/device.map
-sudo grub-install --no-floppy --grub-mkdevicemap=grub/device.map --root-directory=tmp --boot-directory=tmp/boot --modules="$MODULES" $loopdev
+sudo grub-install --no-floppy --grub-mkdevicemap=grub/device.map --root-directory=tmp --boot-directory=tmp/boot --install-modules="$MODULES" --modules="$MODULES" $loopdev
 
 # install syslinux #
 #echo installing syslinux...

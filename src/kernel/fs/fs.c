@@ -37,6 +37,7 @@ extern struct fs_node *fs_alloc(struct fs_node *p) {
 		f->dev = p->dev;
 		f->part = p->part;
 		f->fs = p->fs;
+		f->parent = p;
 	}
 	
 	return f;
@@ -60,90 +61,152 @@ extern int fs_init(void) {
 	fs_root->gid = 0;
 }
 
+/* read file */
+extern u32 fs_read(struct fs_file *fp, u32 c, void *buf) {
+
+	if (fp->n->fs != NULL && fp->n->fs->r != NULL) {
+		
+		u32 r = fp->n->fs->r(fp, c, buf);
+		fp->idx += r;
+		return r;
+	}
+	return 0;
+}
+
+/* write file */
+extern u32 fs_write(struct fs_file *fp, u32 c, void *buf) {
+
+	if (fp->n->fs != NULL && fp->n->fs->w != NULL) {
+
+		u32 w = fp->n->fs->w(fp, c, buf);
+		fp->idx += w;
+		return w;
+	}
+	return 0;
+}
+
+/* open file */
+extern struct fs_file *fs_open(struct fs_node *n, u32 m) {
+
+	struct fs_file *fp = (struct fs_file *)kmalloc(sizeof(struct fs_file));
+
+	/* set values */
+	fp->n = n;
+	fp->m = m;
+fp->idx = 0;
+	fp->d = NULL;
+
+	/* callback */
+	if (n->mask & FS_TYPE != FS_DIR && n->fs != NULL && n->fs->o != NULL) n->fs->o(fp);
+	return fp;
+}
+
+/* close file */
+extern void fs_close(struct fs_file *fp) {
+
+	if (fp->n->mask & FS_TYPE != FS_DIR && fp->n->fs != NULL && fp->n->fs->c != NULL) fp->n->fs->c(fp);
+	kfree(fp);
+}
+
+/* fill directory */
+extern void fs_filldir(struct fs_node *n) {
+
+	while (n->ptr != NULL) n = n->ptr;
+
+	/* get filldir */
+	if (n->fs != NULL && n->fs->fd != NULL) n->fs->fd(n);
+	n->impl = 1;
+}
+
+/* create file */
+extern void fs_create(struct fs_node *n, char *fn, u32 tp) {
+
+	while (n->ptr != NULL) n = n->ptr;
+
+	/* create dirent */
+	struct dirent *dent = fs_dirent_alloc();
+	struct fs_node *ch = fs_alloc(n);
+	dent->node = ch;
+
+	/* get create */
+	if (n->fs != NULL && n->fs->cr != NULL) n->fs->cr(n, fn, tp, dent);
+
+	/* copy info */
+	strcpy(dent->name, fn);
+	strcpy(dent->node->name, fn);
+	dent->next = NULL;
+	dent->node->mask = tp;
+}
+
 /* read from a directory listing */
 extern struct dirent *fs_readdir(struct fs_node *n, u32 i) {
 
 	while (n->ptr != NULL) n = n->ptr;
+	if (n->mask & FS_TYPE != FS_DIR) return NULL;
 
-	/* get readdir */
-	if (n->fs != NULL && n->fs->rd != NULL) return n->fs->rd(n, i);
-	return NULL;
+	/* fill directory */
+	if (!n->first && !n->impl) fs_filldir(n);
+
+	/* loop through dirents */
+struct dirent *dent = n->first;
+	for (int j = 0; j < i; j++) {
+
+		dent = dent->next;
+		if (!dent) break;
+	}
+	
+	/* return */
+	return dent;
 }
 
 /* find a directory */
 extern struct fs_node *fs_finddir(struct fs_node *n, char *s) {
 
 	while (n->ptr != NULL) n = n->ptr;
+	if (n->mask & FS_TYPE != FS_DIR) return NULL;
 
-	/* get finddir */
-	if (n->fs != NULL && n->fs->fd != NULL) return n->fs->fd(n, s);
+	/* fill directory */
+	if (!n->first && !n->impl) fs_filldir(n);
+
+	/* loop through dirents */
+	struct dirent *dent = n->first;
+	while (dent != NULL && !kstreq(dent->name, s))
+		dent = dent->next;
+
+	/* found */
+	if (dent) return dent->node;
 	return NULL;
 }
 
-/* find a directory with a file path */
+/* find in directory with path */
 extern struct fs_node *fs_finddir_path(struct fs_node *n, char *s) {
+
+	if (s[0] == 0) {
+
+		struct fs_node *np = n;
+		while (np->ptr != NULL) np = np->ptr;
+		return np;
+	}
 
 	char *p = s;
 	char *nx = NULL;
-	u32 l = 0;
+	size_t l = 0;
 	struct fs_node *np = n;
-	while (p != NULL) {
+	while (p != NULL && np != NULL) {
 
 		while (np->ptr != NULL) np = np->ptr;
 
-		if (p != s) p++; /* pass '/' char */
+		/* isolate file name */
+		while (p[0] == '/') p++;
 		nx = strchr(p, '/');
 		l = nx != NULL? (u32)(nx - p): strlen(p);
 
 		memcpy(_rand_buf, p, l);
 		_rand_buf[l] = 0;
 
-		/* search for directory entry */
-		if (np->first != NULL) {
-
-			struct dirent *d = np->first;
-			while (d != NULL) {
-
-				if (kstreq(d->name, _rand_buf) && d->node != NULL) {
-
-					np = d->node;
-					break;
-				}
-
-				d = d->next;
-			}
-			if (d == NULL) return NULL;
-		}
-		else if (FS_NODE_TYPE(np) == FS_DIR) {
-
-			struct dirent *d = fs_readdir(np, 0);
-			
-			if (d != NULL) np->first = d;
-			int i = 1;
-			while (d != NULL) {
-
-				struct dirent *t = fs_readdir(np, i);
-				d->next = t;
-				d = t;
-				i++;
-			}
-
-			/* get file nodes (the lazy way) */
-			d = np->first;
-			struct fs_node *_np = NULL;
-			for (int j = 0; j < i; j++) {
-
-				d->node = fs_finddir(np, d->name);
-				//if (kstreq(d->name, _rand_buf))
-				//	_np = d->node;
-				d = d->next;
-			}
-			//if (_np == NULL) return NULL;
-			//np = _np;
-		}
-
+		/* find entry */
+		np = fs_finddir(np, _rand_buf);
 		p = nx;
 	}
-
 	return np;
 }
